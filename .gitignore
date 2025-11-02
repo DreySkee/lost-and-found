@@ -1,0 +1,33 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.env
+.venv
+venv/
+env/
+.envrc
+.DS_Store
+
+# IDE settings
+.vscode/
+.idea/
+
+# Uploads & processed files
+server/uploads/
+server/processed/
+server/*.log
+server/metadata.json
+
+# Model weights
+*.pt
+*.onnx
+*.weights
+
+# uv / pip artifacts
+uv.lock
+*.egg-info/
+build/
+dist/
