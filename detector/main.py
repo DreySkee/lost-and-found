@@ -15,15 +15,6 @@ def main():
     model = YOLO("yolov8n.pt")
     # model = YOLO("yolov8n-oiv7.pt")
 
-    # See available cameras
-    # for i in range(5):
-    #     cap = cv2.VideoCapture(i, cv2.CAP_AVFOUNDATION)  # CAP_AVFOUNDATION for macOS
-    #     if cap.isOpened():
-    #         print(f"✅ Camera index {i} available")
-    #         cap.release()
-    #     else:
-    #         print(f"❌ Camera index {i} not found")
-
     # Init webcam
     cap = cv2.VideoCapture(0)
 
