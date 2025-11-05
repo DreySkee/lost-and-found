@@ -4,6 +4,11 @@ import time
 import requests
 import os
 import numpy as np
+import sys
+
+# Add project root to path to access model files
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_PATH = os.path.join(PROJECT_ROOT, "yolov8n.pt")
 
 # Configuration
 TARGET_CLASSES = {"bottle", "book", "teddy bear", "backpack", "cell phone"}
@@ -12,7 +17,10 @@ SERVER_URL = "http://127.0.0.1:8080/upload"
 def main():
     """Entry point for the detector script"""
     # Load model
-    model = YOLO("yolov8n.pt")
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+    
+    model = YOLO(MODEL_PATH)
     # model = YOLO("yolov8n-oiv7.pt")
 
     # Init webcam
@@ -82,9 +90,7 @@ def main():
             if stable_counter[label] >= STABLE_FRAMES:
                 crop = frame[y1:y2, x1:x2]
                 ts = int(current_time)
-                # filename = f"{label}_{ts}.jpg"
                 filename = f"capture_{label}_{ts}.jpg"
-                # filepath = os.path.join(CAPTURE_DIR, filename)
                 cv2.imwrite(filename, crop)
                 print(f"[CAPTURED] {label} stable crop saved {filename}")
 
@@ -111,3 +117,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

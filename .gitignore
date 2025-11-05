@@ -31,3 +31,8 @@ uv.lock
 *.egg-info/
 build/
 dist/
+
+# React client
+client/node_modules/
+client/dist/
+server/static/

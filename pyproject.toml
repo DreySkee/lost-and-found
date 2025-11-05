@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 package = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["server", "detector"]
+packages = ["server"]
 
 [project]
 name = "lost-and-found"
@@ -21,8 +21,9 @@ dependencies = [
     "opencv-python>=4.8.0",
     "requests>=2.31.0",
     "numpy>=1.24.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.scripts]
 start = "server.app:main"
-detect = "detector.main:main"
+detect = "server.detector.main:main"

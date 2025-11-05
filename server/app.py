@@ -1,17 +1,21 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Ensure the server directory is in the path for imports
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from routes.upload import upload_bp
 from routes.image_routes import image_bp
+from routes.detector_routes import detector_bp
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="static", static_url_path="/static")
 
     # Base directory & folders
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
@@ -19,12 +23,37 @@ def create_app():
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
     # Register blueprints
-    app.register_blueprint(upload_bp)
     app.register_blueprint(image_bp)
+    app.register_blueprint(detector_bp)
+
+    @app.route("/api/health")
+    def health():
+        return {"status": "ok", "message": "Lost & Found AI backend running"}
 
     @app.route("/")
     def home():
-        return {"status": "ok", "message": "Lost & Found AI backend running"}
+        # Serve React app index.html
+        static_dir = os.path.join(BASE_DIR, "static")
+        if os.path.exists(static_dir):
+            return send_from_directory(static_dir, "index.html")
+        return {"status": "ok", "message": "Lost & Found AI backend running - React app not built yet. Run: cd client && npm install && npm run build"}
+    
+    # Catch-all route for React Router (must be last, after all API routes)
+    @app.route("/<path:path>")
+    def serve_react_app(path):
+        # Skip API routes and static assets
+        if any(path.startswith(prefix) for prefix in ["api/", "detector/", "upload", "metadata", "uploads/"]):
+            return {"error": "Not found"}, 404
+        
+        static_dir = os.path.join(BASE_DIR, "static")
+        # If requesting a static file (JS, CSS, etc.), serve it
+        static_file_path = os.path.join(static_dir, path)
+        if os.path.exists(static_file_path) and os.path.isfile(static_file_path):
+            return send_from_directory(static_dir, path)
+        # Otherwise, serve index.html for client-side routing
+        if os.path.exists(static_dir):
+            return send_from_directory(static_dir, "index.html")
+        return {"error": "Not found"}, 404
 
     return app
 
