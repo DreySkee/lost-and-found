@@ -19,7 +19,7 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-def generate_item_description(image_path: str, detected_label: str, confidence: float) -> Optional[str]:
+def generate_item_description(image_path: str) -> Optional[str]:
     """
     Generate a detailed description of a found item using OpenAI Vision API
     
@@ -57,9 +57,9 @@ def generate_item_description(image_path: str, detected_label: str, confidence: 
                         {
                             "type": "text",
                             "text": (
-                                f"This is a detected {detected_label} "
-                                f"(confidence: {confidence:.2%}). Provide a detailed description "
-                                "of this item that would help someone identify it if they lost it."
+                                f"Provide a detailed description "
+                                "of this item that would help someone identify it if they lost it. "
+                                "Keep it short and concise."
                             )
                         },
                         {

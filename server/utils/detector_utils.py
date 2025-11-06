@@ -1,7 +1,7 @@
 import os
 import sys
 import numpy as np
-from typing import List, Dict, Any, Tuple, Optional
+from typing import List, Dict, Any, Tuple
 from ultralytics import YOLO
 import cv2
 
@@ -10,8 +10,8 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 MODEL_PATH = os.path.join(PROJECT_ROOT, "yolov8n.pt")
 
 # Configuration
-TARGET_CLASSES = {"bottle", "book", "teddy bear", "backpack", "cell phone"}
-CONFIDENCE_THRESHOLD = 0.5
+TARGET_CLASSES = {"bottle", "book", "teddy bear", "backpack", "bag", "cell phone"}
+CONFIDENCE_THRESHOLD = 0.01
 
 # Global model instance (lazy loaded)
 _model = None
@@ -102,30 +102,4 @@ def detect_objects(image_path: str) -> List[Dict[str, Any]]:
         print(f"[ERROR] Detection failed: {e}")
         print(traceback.format_exc())
         return []
-
-
-def process_image_for_upload(image_path: str, save_folder: str) -> Optional[Dict[str, Any]]:
-    """
-    Process an image: detect objects and prepare for upload
-    
-    Args:
-        image_path: Path to the uploaded image
-        save_folder: Folder to save processed images
-        
-    Returns:
-        Dictionary with detection results or None if no detections
-    """
-    detections = detect_objects(image_path)
-    
-    if not detections:
-        return None
-    
-    # Use the first detection (highest confidence)
-    best_detection = max(detections, key=lambda x: x["confidence"])
-    
-    return {
-        "detections": detections,
-        "primary_label": best_detection["label"],
-        "primary_confidence": best_detection["confidence"]
-    }
 

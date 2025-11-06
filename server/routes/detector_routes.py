@@ -112,11 +112,7 @@ def detect_image():
         # Generate OpenAI description if available
         description = None
         try:
-            description = generate_item_description(
-                file_path, 
-                label, 
-                best_detection["confidence"]
-            )
+            description = generate_item_description(file_path)
         except Exception as e:
             print(f"[WARNING] Could not generate description: {e}")
         
