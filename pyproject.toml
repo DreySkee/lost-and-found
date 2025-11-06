@@ -26,4 +26,3 @@ dependencies = [
 
 [project.scripts]
 start = "server.app:main"
-detect = "server.detector.main:main"
