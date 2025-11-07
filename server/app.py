@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify, request
 import os
 import sys
 from dotenv import load_dotenv
@@ -13,6 +13,7 @@ if BASE_DIR not in sys.path:
 
 from routes.image_routes import image_bp
 from routes.detector_routes import detector_bp
+from routes.item_routes import item_bp
 
 def create_app():
     app = Flask(__name__, static_folder="static", static_url_path="/static")
@@ -25,10 +26,29 @@ def create_app():
     # Register blueprints
     app.register_blueprint(image_bp)
     app.register_blueprint(detector_bp)
+    app.register_blueprint(item_bp)
 
     @app.route("/api/health")
     def health():
         return {"status": "ok", "message": "Lost & Found AI backend running"}
+
+    @app.route("/search")
+    def serve_search():
+        """Serve search.html"""
+        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
+        search_file = os.path.join(static_dir, "search.html")
+        if os.path.exists(search_file):
+            return send_from_directory(static_dir, "search.html")
+        return {"error": "Search page not found"}, 404
+
+    @app.route("/search.css")
+    def serve_search_css():
+        """Serve search.css"""
+        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
+        css_file = os.path.join(static_dir, "search.css")
+        if os.path.exists(css_file):
+            return send_from_directory(static_dir, "search.css")
+        return {"error": "CSS file not found"}, 404
 
     @app.route("/")
     def home():

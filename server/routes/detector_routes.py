@@ -11,8 +11,6 @@ from utils.openai_utils import generate_item_description
 detector_bp = Blueprint("detector_bp", __name__)
 
 
-
-
 @detector_bp.route("/detector/detect-realtime", methods=["POST"])
 def detect_realtime():
     """Real-time detection endpoint that doesn't save images"""
@@ -102,19 +100,26 @@ def detect_image():
             best_detection["label"] = None
             best_detection["confidence"] = 0
             best_detection["bbox"] = None
-        
-        # Save the image with proper name
-        label =  best_detection["label"]
-        filename = secure_filename(f"{label}_{ts}.jpg")
-        file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
-        os.rename(temp_path, file_path)
+    
         
         # Generate OpenAI description if available
-        description = None
+        item_description = None
         try:
-            description = generate_item_description(file_path)
+            item_description = generate_item_description(temp_path)
+            if item_description:
+                print(f"[DEBUG] Item description received: {item_description}")
+            else:
+                print(f"[DEBUG] Item description is None (API may not be configured or failed)")
         except Exception as e:
             print(f"[WARNING] Could not generate description: {e}")
+            import traceback
+            traceback.print_exc()
+
+         # Save the image with proper name
+        category = item_description.get("category") if item_description else None
+        filename = secure_filename(f"{category}_{ts}.jpg")
+        file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+        os.rename(temp_path, file_path)
         
         # Build metadata record
         image_url = f"http://{request.host}/uploads/{filename}"
@@ -122,10 +127,15 @@ def detect_image():
             "timestamp": ts,
             "filename": filename,
             "image_url": image_url,
-            "label": label,
+            "label": item_description.get("label") if item_description else None,
             "confidence": str(best_detection["confidence"]),
-            "description": description
+            "category": category,
+            "color": item_description.get("color") if item_description else None,
+            "condition": item_description.get("condition") if item_description else None,
+            "distinctive_features": item_description.get("distinctive_features") if item_description else None
         }
+        
+        print(f"[DEBUG] Final record: category={record['category']}, color={record['color']}, condition={record['condition']}")
         
         # Save metadata
         data = load_metadata()

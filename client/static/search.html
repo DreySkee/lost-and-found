@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost & Found - Search</title>
+    <link rel="stylesheet" href="search.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Lost & Found Search</h1>
+            <p>Search through found items</p>
+        </div>
+
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-box" 
+                placeholder="Search by label, category, color, condition, or distinctive features..."
+                autocomplete="off"
+            />
+            <div class="results-info" id="resultsInfo"></div>
+        </div>
+
+        <div id="errorMessage"></div>
+        <div id="loadingMessage" class="loading" style="display: none;">Loading metadata...</div>
+        <div id="resultsContainer"></div>
+    </div>
+
+    <script>
+        let metadata = [];
+        let searchTimeout;
+        let isInitialLoad = true;
+        let currentSearchQuery = '';
+
+        // Fetch metadata on page load
+        async function loadMetadata(showLoading = true) {
+            const loadingEl = document.getElementById('loadingMessage');
+            const errorEl = document.getElementById('errorMessage');
+            const resultsEl = document.getElementById('resultsContainer');
+
+            // Save scroll position before any updates
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (showLoading) {
+                loadingEl.style.display = 'block';
+                errorEl.innerHTML = '';
+                resultsEl.innerHTML = '';
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/item');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const newMetadata = await response.json();
+                
+                // Check if metadata actually changed by comparing JSON strings
+                const metadataChanged = JSON.stringify(metadata) !== JSON.stringify(newMetadata);
+                
+                if (metadataChanged || isInitialLoad) {
+                    metadata = newMetadata;
+                    
+                    // Apply current search filter if there's a query
+                    if (currentSearchQuery.trim()) {
+                        searchItems(currentSearchQuery);
+                    } else {
+                        displayResults(metadata);
+                    }
+                }
+                
+                if (showLoading) {
+                    loadingEl.style.display = 'none';
+                }
+                
+                // Restore scroll position after DOM update
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPosition);
+                });
+                
+                isInitialLoad = false;
+            } catch (error) {
+                if (showLoading) {
+                    loadingEl.style.display = 'none';
+                    errorEl.innerHTML = `<div class="error">Error loading metadata: ${error.message}. Make sure the server is running on http://localhost:8080</div>`;
+                }
+                console.error('Error loading metadata:', error);
+                
+                // Restore scroll position even on error
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPosition);
+                });
+            }
+        }
+
+        // Search function
+        function searchItems(query) {
+            // Save current search query
+            currentSearchQuery = query;
+            
+            // Save scroll position before updating
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (!query.trim()) {
+                displayResults(metadata);
+            } else {
+                const searchTerm = query.toLowerCase().trim();
+                const filtered = metadata.filter(item => {
+                    // Search across multiple fields
+                    const searchableText = [
+                        item.label || '',
+                        item.category || '',
+                        item.color || '',
+                        item.condition || '',
+                        item.distinctive_features || ''
+                    ].join(' ').toLowerCase();
+
+                    return searchableText.includes(searchTerm);
+                });
+
+                displayResults(filtered);
+            }
+            
+            // Restore scroll position after DOM update
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPosition);
+            });
+        }
+
+        // Display results
+        function displayResults(results) {
+            const container = document.getElementById('resultsContainer');
+            const infoEl = document.getElementById('resultsInfo');
+
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h2>No items found</h2>
+                        <p>Try adjusting your search terms</p>
+                    </div>
+                `;
+                infoEl.textContent = 'No results found';
+                return;
+            }
+
+            infoEl.textContent = `Found ${results.length} item${results.length !== 1 ? 's' : ''}`;
+
+            container.innerHTML = `
+                <div class="results-grid">
+                    ${results.map(item => `
+                        <div class="result-card" data-filename="${escapeHtml(item.filename)}">
+                            <div class="result-image-wrapper">
+                                <img 
+                                    src="${item.image_url}" 
+                                    alt="${item.label || 'Found item'}"
+                                    class="result-image"
+                                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'250\'%3E%3Crect fill=\'%23f0f0f0\' width=\'300\' height=\'250\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3EImage not available%3C/text%3E%3C/svg%3E'"
+                                />
+                                <button class="delete-button" onclick="deleteItem('${escapeHtml(item.filename)}', '${escapeHtml(item.label || 'this item')}')" title="Delete item">
+                                    ×
+                                </button>
+                            </div>
+                            <div class="result-content">
+                                <div class="result-label">${escapeHtml(item.label || 'Unknown Item')}</div>
+                                ${item.category ? `<span class="result-category">${escapeHtml(item.category)}</span>` : ''}
+                                <div class="result-details">
+                                    ${item.timestamp ? `<p><strong>Time found:</strong> ${formatTimestamp(item.timestamp)}</p>` : ''}
+                                    ${item.color ? `<p><strong>Color:</strong> ${escapeHtml(item.color)}</p>` : ''}
+                                    ${item.condition ? `<p><strong>Condition:</strong> ${escapeHtml(item.condition)}</p>` : ''}
+                                    ${item.distinctive_features ? `<p><strong>Features:</strong> ${escapeHtml(item.distinctive_features)}</p>` : ''}
+                                    ${item.confidence && parseFloat(item.confidence) > 0 ? `<p><strong>Confidence:</strong> ${(parseFloat(item.confidence) * 100).toFixed(1)}%</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Format timestamp to readable date/time
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Unknown';
+            
+            try {
+                // Parse timestamp format: YYYYMMDD_HHMMSS
+                const year = timestamp.substring(0, 4);
+                const month = timestamp.substring(4, 6);
+                const day = timestamp.substring(6, 8);
+                const hour = timestamp.substring(9, 11);
+                const minute = timestamp.substring(11, 13);
+                const second = timestamp.substring(13, 15);
+                
+                // Create date object
+                const date = new Date(
+                    parseInt(year),
+                    parseInt(month) - 1, // Month is 0-indexed
+                    parseInt(day),
+                    parseInt(hour),
+                    parseInt(minute),
+                    parseInt(second)
+                );
+                
+                // Format: "November 6, 2025 at 4:55 PM"
+                const dateStr = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                const timeStr = date.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit', 
+                    hour12: true 
+                });
+                
+                return `${dateStr} at ${timeStr}`;
+            } catch (error) {
+                console.error('Error formatting timestamp:', error);
+                return timestamp; // Return original if parsing fails
+            }
+        }
+
+        // Delete item function
+        async function deleteItem(filename, itemLabel) {
+            if (!confirm(`Are you sure you want to delete "${itemLabel}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                // URL encode the filename to handle special characters
+                const encodedFilename = encodeURIComponent(filename);
+                const response = await fetch(`http://localhost:8080/api/item/${encodedFilename}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // Reload metadata to refresh the display
+                await loadMetadata(false);
+                
+                // Show success message briefly
+                const infoEl = document.getElementById('resultsInfo');
+                const originalText = infoEl.textContent;
+                infoEl.textContent = `"${itemLabel}" deleted successfully`;
+                infoEl.style.color = '#4caf50';
+                
+                setTimeout(() => {
+                    infoEl.textContent = originalText;
+                    infoEl.style.color = '#666';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                alert(`Error deleting item: ${error.message}`);
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Setup search input listener
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value;
+            
+            // Debounce search for better performance
+            searchTimeout = setTimeout(() => {
+                searchItems(query);
+            }, 300);
+        });
+
+        // Load metadata when page loads
+        loadMetadata(true);
+
+        // Reload metadata in background every 3 seconds (without showing loading indicator)
+        setInterval(() => {
+            loadMetadata(false);
+        }, 3000);
+    </script>
+</body>
+</html>
+

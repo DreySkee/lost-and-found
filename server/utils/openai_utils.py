@@ -4,6 +4,11 @@ import base64
 from openai import OpenAI
 from typing import Optional, Dict, Any
 
+
+itemFields = ["category", "label", "color", "condition", "distinctive_features"] 
+itemCategories = ["bottle", "book", "toy", "backpack", "bag", "cell_phone", "watch", "wallet", "key", "other"]
+
+
 # Initialize OpenAI client lazily (only when API key is available)
 def get_client() -> Optional[OpenAI]:
     """Get OpenAI client if API key is available"""
@@ -19,21 +24,54 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-def generate_item_description(image_path: str) -> Optional[str]:
+def parse_openai_json_response(content: str) -> Optional[Dict[str, Any]]:
+    """
+    Parse OpenAI API response content, handling markdown code blocks and JSON parsing.
+    
+    Args:
+        content: Raw content string from OpenAI API response
+        
+    Returns:
+        Parsed JSON dictionary or None if parsing fails
+    """
+    if not content or not content.strip():
+        print(f"[ERROR] OpenAI returned empty response")
+        return None
+    
+    # Remove markdown code blocks if present
+    content = content.strip()
+    if content.startswith("```"):
+        # Remove ```json or ``` markers
+        lines = content.split("\n")
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines[-1].strip() == "```":
+            lines = lines[:-1]
+        content = "\n".join(lines)
+    
+    try:
+        result = json.loads(content)
+        return result
+    except json.JSONDecodeError as json_err:
+        print(f"[ERROR] OpenAI returned invalid JSON: {json_err}")
+        print(f"[DEBUG] Response content: {content[:500]}")  # Log first 500 chars
+        return None
+
+
+def generate_item_description(image_path: str) -> Optional[Dict[str, Any]]:
     """
     Generate a detailed description of a found item using OpenAI Vision API
     
     Args:
         image_path: Path to the image file
-        detected_label: The label detected by YOLO
-        confidence: Detection confidence score
         
     Returns:
-        Generated description or None if API call fails
+        Dictionary with item description fields (category, color, condition, distinctive_features) or None if API call fails
     """
     try:
         client = get_client()
         if not client:
+            print("[INFO] OpenAI API key not configured, skipping description generation")
             return None
             
         base64_image = encode_image(image_path)
@@ -47,8 +85,10 @@ def generate_item_description(image_path: str) -> Optional[str]:
                         "You are a helpful assistant that describes lost and found items. "
                         "Provide a concise, detailed description focusing on color, brand (if visible), "
                         "condition and distinctive features. Keep it short and concise. Do not include anything about the person "
-                        "holding the item or the hand holding it. Ignore any other items that are not in the focus."
-                        "If the item is not detected, return 'No item detected'."
+                        "holding the item or the hand holding it. Ignore any other items that are not in the focus. "
+                        "Always return a valid JSON object with the following fields: " + ", ".join(itemFields) + ". "
+                        "The category should be one of the following: " + ", ".join(itemCategories) + ". "
+                        "If the item is not detected, set category to 'other' and provide what you can see."
                     )
                 },
                 {
@@ -57,7 +97,7 @@ def generate_item_description(image_path: str) -> Optional[str]:
                         {
                             "type": "text",
                             "text": (
-                                f"Provide a detailed description "
+                                "Provide a detailed description "
                                 "of this item that would help someone identify it if they lost it. "
                                 "Keep it short and concise."
                             )
@@ -71,12 +111,19 @@ def generate_item_description(image_path: str) -> Optional[str]:
                     ]
                 }
             ],
-            max_tokens=150
+            response_format={"type": "json_object"},
+            max_tokens=200
         )
         
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        result = parse_openai_json_response(content)
+        if result:
+            print(f"[DEBUG] OpenAI returned: {result}")
+        return result
     except Exception as e:
         print(f"[ERROR] OpenAI description generation failed: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -139,8 +186,16 @@ def search_items_with_llm(query: str, metadata: list) -> Dict[str, Any]:
             max_tokens=300
         )
         
-        result = json.loads(response.choices[0].message.content)
-        return result
+        content = response.choices[0].message.content
+        result = parse_openai_json_response(content)
+        if result:
+            return result
+        else:
+            return {
+                "reasoning": "Failed to parse OpenAI response",
+                "matched_indices": [],
+                "suggestions": []
+            }
     except Exception as e:
         print(f"[ERROR] OpenAI search failed: {e}")
         return {
