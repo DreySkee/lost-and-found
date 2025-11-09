@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Camera Feed</title>
-    <link rel="stylesheet" href="camera.css">
+    <link rel="stylesheet" href="/camera.css">
 </head>
 <body>
     <video id="video" autoplay playsinline></video>
@@ -125,7 +125,7 @@
             formData.append('imageData', dataUrl);
 
             try {
-                const response = await fetch('http://localhost:8080/detector/detect', {
+                const response = await fetch('/detector/detect', {
                     method: 'POST',
                     body: formData
                 });
@@ -166,4 +166,3 @@
     </script>
 </body>
 </html>
-

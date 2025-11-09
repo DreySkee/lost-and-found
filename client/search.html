@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lost & Found - Search</title>
-    <link rel="stylesheet" href="search.css">
+    <link rel="stylesheet" href="/search.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔍 Lost & Found Search</h1>
+            <h1>🔍 Lost &amp; Found Search</h1>
             <p>Search through found items</p>
         </div>
 
@@ -59,7 +59,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:8080/api/item');
+                const response = await fetch('/api/item');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -240,7 +240,7 @@
             try {
                 // URL encode the filename to handle special characters
                 const encodedFilename = encodeURIComponent(filename);
-                const response = await fetch(`http://localhost:8080/api/item/${encodedFilename}`, {
+                const response = await fetch(`/api/item/${encodedFilename}`, {
                     method: 'DELETE',
                 });
 
@@ -249,7 +249,7 @@
                     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                await response.json();
                 
                 // Reload metadata to refresh the display
                 await loadMetadata(false);
@@ -310,4 +310,3 @@
     </script>
 </body>
 </html>
-

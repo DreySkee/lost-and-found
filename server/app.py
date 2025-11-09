@@ -32,49 +32,43 @@ def create_app():
     def health():
         return {"status": "ok", "message": "Lost & Found AI backend running"}
 
+    client_root = os.path.join(BASE_DIR, "..", "client")
+
     @app.route("/search")
     def serve_search():
         """Serve search.html"""
-        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
-        search_file = os.path.join(static_dir, "search.html")
+        search_file = os.path.join(client_root, "search.html")
         if os.path.exists(search_file):
-            return send_from_directory(static_dir, "search.html")
+            return send_from_directory(client_root, "search.html")
         return {"error": "Search page not found"}, 404
 
     @app.route("/search.css")
     def serve_search_css():
         """Serve search.css"""
-        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
-        css_file = os.path.join(static_dir, "search.css")
+        css_file = os.path.join(client_root, "search.css")
         if os.path.exists(css_file):
-            return send_from_directory(static_dir, "search.css")
+            return send_from_directory(client_root, "search.css")
         return {"error": "CSS file not found"}, 404
 
     @app.route("/camera")
     def serve_camera():
         """Serve camera.html"""
-        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
-        camera_file = os.path.join(static_dir, "camera.html")
+        camera_file = os.path.join(client_root, "camera.html")
         if os.path.exists(camera_file):
-            return send_from_directory(static_dir, "camera.html")
+            return send_from_directory(client_root, "camera.html")
         return {"error": "Camera page not found"}, 404
 
     @app.route("/camera.css")
     def serve_camera_css():
         """Serve camera.css"""
-        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
-        css_file = os.path.join(static_dir, "camera.css")
+        css_file = os.path.join(client_root, "camera.css")
         if os.path.exists(css_file):
-            return send_from_directory(static_dir, "camera.css")
+            return send_from_directory(client_root, "camera.css")
         return {"error": "CSS file not found"}, 404
 
     @app.route("/")
     def home():
-        # Serve React app index.html
-        static_dir = os.path.join(BASE_DIR, "static")
-        if os.path.exists(static_dir):
-            return send_from_directory(static_dir, "index.html")
-        return {"status": "ok", "message": "Lost & Found AI backend running - React app not built yet. Run: cd client && npm install && npm run build"}
+        return serve_search()
     
     # Catch-all route for React Router (must be last, after all API routes)
     @app.route("/<path:path>")
@@ -82,15 +76,12 @@ def create_app():
         # Skip API routes and static assets
         if any(path.startswith(prefix) for prefix in ["api/", "detector/", "upload", "metadata", "uploads/"]):
             return {"error": "Not found"}, 404
-        
-        static_dir = os.path.join(BASE_DIR, "static")
-        # If requesting a static file (JS, CSS, etc.), serve it
-        static_file_path = os.path.join(static_dir, path)
-        if os.path.exists(static_file_path) and os.path.isfile(static_file_path):
-            return send_from_directory(static_dir, path)
-        # Otherwise, serve index.html for client-side routing
-        if os.path.exists(static_dir):
-            return send_from_directory(static_dir, "index.html")
+
+        requested_file = os.path.join(client_root, path)
+        if os.path.exists(requested_file) and os.path.isfile(requested_file):
+            rel_dir, filename = os.path.split(requested_file)
+            return send_from_directory(rel_dir, filename)
+
         return {"error": "Not found"}, 404
 
     return app
