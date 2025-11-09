@@ -87,6 +87,7 @@ def generate_item_description(image_path: str) -> Optional[Dict[str, Any]]:
                         "condition and distinctive features. Keep it short and concise. Do not include anything about the person "
                         "holding the item or the hand holding it. Ignore any other items that are not in the focus. "
                         "Always return a valid JSON object with the following fields: " + ", ".join(itemFields) + ". "
+                        "Always use a generic item name for the label, if brand is know put it next to the label in parentheses."
                         "The category should be one of the following: " + ", ".join(itemCategories) + ". "
                         "If the item is not detected, set category to 'other' and provide what you can see."
                     )

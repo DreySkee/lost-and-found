@@ -11,6 +11,12 @@ from utils.openai_utils import generate_item_description
 detector_bp = Blueprint("detector_bp", __name__)
 
 
+def to_title_case(value: str):
+    if not value:
+        return value
+    return " ".join(word.capitalize() for word in value.split())
+
+
 @detector_bp.route("/detector/detect-realtime", methods=["POST"])
 def detect_realtime():
     """Real-time detection endpoint that doesn't save images"""
@@ -54,12 +60,28 @@ def detect_realtime():
         return jsonify({"error": str(e)}), 500
 
 
-@detector_bp.route("/detector/detect", methods=["POST"])
+@detector_bp.route("/detector/detect", methods=["POST", "OPTIONS"])
 def detect_image():
     """Process an image with YOLO detector"""
+    if request.method == "OPTIONS":
+        response = jsonify({})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        return response, 200
+
+    def build_response(payload, status=200):
+        resp = jsonify(payload)
+        resp.headers.add("Access-Control-Allow-Origin", "*")
+        resp.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        resp.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        return resp, status
+
+    description_warning = None
+
     try:
         if "image" not in request.files and "imageData" not in request.form:
-            return jsonify({"error": "No image provided"}), 400
+            return build_response({"error": "No image provided"}, 400)
         
         # Handle base64 image data from webcam
         if "imageData" in request.form:
@@ -109,25 +131,33 @@ def detect_image():
             if item_description:
                 print(f"[DEBUG] Item description received: {item_description}")
             else:
+                description_warning = "AI description service returned no result. Item saved without description."
                 print(f"[DEBUG] Item description is None (API may not be configured or failed)")
         except Exception as e:
+            description_warning = "Unable to reach the AI description service. Item saved without automatic description."
             print(f"[WARNING] Could not generate description: {e}")
             import traceback
             traceback.print_exc()
 
          # Save the image with proper name
-        category = item_description.get("category") if item_description else None
+        category = None
+        if item_description:
+            category = item_description.get("category")
+        if not category:
+            category = best_detection.get("label") if best_detection.get("label") else "item"
         filename = secure_filename(f"{category}_{ts}.jpg")
         file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
         os.rename(temp_path, file_path)
         
         # Build metadata record
         image_url = f"http://{request.host}/uploads/{filename}"
+        raw_label = item_description.get("label") if item_description else best_detection.get("label")
+        formatted_label = to_title_case(raw_label) if raw_label else None
         record = {
             "timestamp": ts,
             "filename": filename,
             "image_url": image_url,
-            "label": item_description.get("label") if item_description else None,
+            "label": formatted_label,
             "confidence": str(best_detection["confidence"]),
             "category": category,
             "color": item_description.get("color") if item_description else None,
@@ -142,18 +172,16 @@ def detect_image():
         data.append(record)
         save_metadata(data)
         
-        return jsonify({
+        response_payload = {
             "success": True,
-            "detections": detections,
-            "primary": {
-                "label": label,
-                "confidence": best_detection["confidence"],
-                "bbox": best_detection["bbox"]
-            },
             "metadata": record
-        }), 200
+        }
+        if description_warning:
+            response_payload["warning"] = description_warning
+
+        return build_response(response_payload, 200)
         
     except Exception as e:
         print(f"[ERROR] Detection endpoint failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        return build_response({"error": str(e)}, 500)
 

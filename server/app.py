@@ -50,6 +50,24 @@ def create_app():
             return send_from_directory(static_dir, "search.css")
         return {"error": "CSS file not found"}, 404
 
+    @app.route("/camera")
+    def serve_camera():
+        """Serve camera.html"""
+        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
+        camera_file = os.path.join(static_dir, "camera.html")
+        if os.path.exists(camera_file):
+            return send_from_directory(static_dir, "camera.html")
+        return {"error": "Camera page not found"}, 404
+
+    @app.route("/camera.css")
+    def serve_camera_css():
+        """Serve camera.css"""
+        static_dir = os.path.join(BASE_DIR, "..", "client", "static")
+        css_file = os.path.join(static_dir, "camera.css")
+        if os.path.exists(css_file):
+            return send_from_directory(static_dir, "camera.css")
+        return {"error": "CSS file not found"}, 404
+
     @app.route("/")
     def home():
         # Serve React app index.html

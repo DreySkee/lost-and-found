@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Feed</title>
+    <link rel="stylesheet" href="camera.css">
+</head>
+<body>
+    <video id="video" autoplay playsinline></video>
+    <img id="photo" alt="Captured photo" />
+    <div class="controls">
+        <button id="captureBtn" disabled>Take Picture</button>
+    </div>
+    <div id="status" class="status-message" style="display: none;"></div>
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner" aria-hidden="true"></div>
+        <span class="loading-text">Saving to Lost &amp; Found…</span>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const captureBtn = document.getElementById('captureBtn');
+        const photo = document.getElementById('photo');
+        const statusDiv = document.getElementById('status');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const canvas = document.createElement('canvas');
+        let stream = null;
+        let statusTimeout = null;
+
+        function showMessage(message, type = 'info', duration = 4000) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+            if (statusTimeout) {
+                clearTimeout(statusTimeout);
+            }
+            statusTimeout = setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, duration);
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loadingOverlay.style.display = 'flex';
+                captureBtn.disabled = true;
+            } else {
+                loadingOverlay.style.display = 'none';
+                captureBtn.disabled = false;
+            }
+        }
+
+        async function startCamera() {
+            try {
+                // Request camera access
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment' // Use back camera on mobile if available
+                    },
+                    audio: false
+                });
+
+                video.srcObject = stream;
+                captureBtn.disabled = false;
+                statusDiv.style.display = 'none';
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                showMessage(`Camera access error: ${error.message}`, 'error', 7000);
+                captureBtn.disabled = true;
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            video.srcObject = null;
+            captureBtn.disabled = true;
+        }
+
+        async function takePicture() {
+            if (!stream) {
+                await startCamera();
+                if (!stream) {
+                    return;
+                }
+            }
+
+            if (video.readyState < 2) {
+                await new Promise(resolve => {
+                    video.addEventListener('loadeddata', resolve, { once: true });
+                });
+            }
+
+            const width = video.videoWidth || 1280;
+            const height = video.videoHeight || 720;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            photo.src = dataUrl;
+            photo.classList.add('visible');
+            video.classList.add('hidden');
+            showMessage('Photo captured. Uploading...', 'info');
+            setLoading(true);
+
+            try {
+                await uploadImage(dataUrl);
+            } catch (error) {
+                // error message already shown in uploadImage
+            } finally {
+                photo.classList.remove('visible');
+                video.classList.remove('hidden');
+                setLoading(false);
+            }
+        }
+
+        async function uploadImage(dataUrl) {
+            const formData = new FormData();
+            formData.append('imageData', dataUrl);
+
+            try {
+                const response = await fetch('http://localhost:8080/detector/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (jsonError) {
+                        console.warn('Could not parse error response JSON:', jsonError);
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                if (data.warning) {
+                    showMessage(data.warning, 'error', 7000);
+                } else {
+                    showMessage('Photo saved to Lost & Found.', 'success');
+                }
+            } catch (error) {
+                console.error('Upload failed:', error);
+                showMessage(`Upload failed: ${error.message}`, 'error', 7000);
+                throw error;
+            }
+        }
+
+        captureBtn.addEventListener('click', takePicture);
+
+        // Auto-start camera when page loads
+        window.addEventListener('load', () => startCamera());
+
+        // Stop camera when page is unloaded
+        window.addEventListener('beforeunload', () => stopCamera());
+    </script>
+</body>
+</html>
+

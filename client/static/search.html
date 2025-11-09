@@ -35,6 +35,14 @@
         let isInitialLoad = true;
         let currentSearchQuery = '';
 
+        function sortByTimestampDesc(items) {
+            return [...items].sort((a, b) => {
+                const tsA = a.timestamp || '';
+                const tsB = b.timestamp || '';
+                return tsB.localeCompare(tsA);
+            });
+        }
+
         // Fetch metadata on page load
         async function loadMetadata(showLoading = true) {
             const loadingEl = document.getElementById('loadingMessage');
@@ -61,7 +69,7 @@
                 const metadataChanged = JSON.stringify(metadata) !== JSON.stringify(newMetadata);
                 
                 if (metadataChanged || isInitialLoad) {
-                    metadata = newMetadata;
+                    metadata = sortByTimestampDesc(newMetadata);
                     
                     // Apply current search filter if there's a query
                     if (currentSearchQuery.trim()) {
@@ -146,11 +154,13 @@
                 return;
             }
 
-            infoEl.textContent = `Found ${results.length} item${results.length !== 1 ? 's' : ''}`;
+            const sortedResults = sortByTimestampDesc(results);
+
+            infoEl.textContent = `Found ${sortedResults.length} item${sortedResults.length !== 1 ? 's' : ''}`;
 
             container.innerHTML = `
                 <div class="results-grid">
-                    ${results.map(item => `
+                    ${sortedResults.map(item => `
                         <div class="result-card" data-filename="${escapeHtml(item.filename)}">
                             <div class="result-image-wrapper">
                                 <img 
@@ -159,19 +169,18 @@
                                     class="result-image"
                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'250\'%3E%3Crect fill=\'%23f0f0f0\' width=\'300\' height=\'250\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'18\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3EImage not available%3C/text%3E%3C/svg%3E'"
                                 />
-                                <button class="delete-button" onclick="deleteItem('${escapeHtml(item.filename)}', '${escapeHtml(item.label || 'this item')}')" title="Delete item">
+                                <button class="delete-button" onclick="deleteItem('${escapeHtml(item.filename)}', '${escapeHtml(formatLabel(item.label))}')" title="Delete item">
                                     ×
                                 </button>
                             </div>
                             <div class="result-content">
-                                <div class="result-label">${escapeHtml(item.label || 'Unknown Item')}</div>
+                                <div class="result-label">${escapeHtml(formatLabel(item.label))}</div>
                                 ${item.category ? `<span class="result-category">${escapeHtml(item.category)}</span>` : ''}
                                 <div class="result-details">
                                     ${item.timestamp ? `<p><strong>Time found:</strong> ${formatTimestamp(item.timestamp)}</p>` : ''}
                                     ${item.color ? `<p><strong>Color:</strong> ${escapeHtml(item.color)}</p>` : ''}
                                     ${item.condition ? `<p><strong>Condition:</strong> ${escapeHtml(item.condition)}</p>` : ''}
                                     ${item.distinctive_features ? `<p><strong>Features:</strong> ${escapeHtml(item.distinctive_features)}</p>` : ''}
-                                    ${item.confidence && parseFloat(item.confidence) > 0 ? `<p><strong>Confidence:</strong> ${(parseFloat(item.confidence) * 100).toFixed(1)}%</p>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -267,6 +276,17 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function formatLabel(label) {
+            if (!label || !label.toString().trim()) {
+                return 'Unknown Item';
+            }
+            const normalized = label.toString().replace(/_/g, ' ');
+            return normalized
+                .split(/\s+/)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
         }
 
         // Setup search input listener
