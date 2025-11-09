@@ -27,26 +27,35 @@
         <div id="resultsContainer"></div>
     </div>
 
+    <!-- This file gives us the list of items to show -->
     <script src="metadata.js"></script>
     <script>
+        // If the list is missing, let the reader know.
         if (!window.METADATA || !Array.isArray(window.METADATA)) {
             document.getElementById('resultsContainer').innerHTML = `
                 <div class="error">Metadata failed to load. Ensure metadata.js is in the same directory as this page.</div>
             `;
         }
 
-        let metadata = Array.isArray(window.METADATA) ? window.METADATA : [];
+        // Grab the item list. We copy so we can sort without breaking the original list.
+        let metadata = Array.isArray(window.METADATA) ? window.METADATA.slice() : [];
         let searchTimeout;
 
+        // Sort items so the newest ones appear first.
         metadata = sortByTimestampDesc(metadata);
+        // Show everything right away.
         displayResults(metadata);
 
+        // When someone types in the search box, we wait 250ms before re-running the search.
         document.getElementById('searchInput').addEventListener('input', (event) => {
             clearTimeout(searchTimeout);
             const query = event.target.value;
             searchTimeout = setTimeout(() => searchItems(query), 250);
         });
 
+        // --- Helper functions ---
+
+        // Sort items so the latest timestamp comes first.
         function sortByTimestampDesc(items) {
             return [...items].sort((a, b) => {
                 const tsA = a.timestamp || '';
@@ -55,6 +64,7 @@
             });
         }
 
+        // Filter items based on what was typed.
         function searchItems(query) {
             if (!query.trim()) {
                 displayResults(metadata);
@@ -77,6 +87,7 @@
             displayResults(filtered);
         }
 
+        // Build the HTML for the list of items.
         function displayResults(results) {
             const container = document.getElementById('resultsContainer');
             const infoEl = document.getElementById('resultsInfo');
@@ -122,6 +133,7 @@
             `;
         }
 
+        // Turn a timestamp like "20251106_165548" into a nicer sentence.
         function formatTimestamp(timestamp) {
             if (!timestamp) return 'Unknown';
 
