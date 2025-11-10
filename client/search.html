@@ -180,6 +180,7 @@
                                 ${item.category ? `<span class="result-category">${escapeHtml(item.category)}</span>` : ''}
                                 <div class="result-details">
                                     ${item.timestamp ? `<p><strong>Time found:</strong> ${formatTimestamp(item.timestamp)}</p>` : ''}
+                                    ${item.category ? `<p><strong>Category:</strong> ${escapeHtml(item.category)}</p>` : ''}
                                     ${item.color ? `<p><strong>Color:</strong> ${escapeHtml(item.color)}</p>` : ''}
                                     ${item.condition ? `<p><strong>Condition:</strong> ${escapeHtml(item.condition)}</p>` : ''}
                                     ${item.distinctive_features ? `<p><strong>Features:</strong> ${escapeHtml(item.distinctive_features)}</p>` : ''}

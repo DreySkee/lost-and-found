@@ -207,6 +207,7 @@
             const resultDetails = document.getElementById('resultDetails');
             let detailsHtml = '';
             detailsHtml += `<p><strong>Time found:</strong> ${formatTimestamp(metadata.timestamp)}</p>`;
+            detailsHtml += `<p><strong>Category:</strong> ${escapeHtml(metadata.category)}</p>`;
             detailsHtml += `<p><strong>Color:</strong> ${escapeHtml(metadata.color)}</p>`;
             detailsHtml += `<p><strong>Condition:</strong> ${escapeHtml(metadata.condition)}</p>`;
             detailsHtml += `<p><strong>Features:</strong> ${escapeHtml(metadata.distinctive_features)}</p>`;
@@ -224,10 +225,18 @@
             document.body.style.overflow = '';
         }
 
-        // Close popup on ESC key
+        // Handle keyboard shortcuts
         document.addEventListener('keydown', (e) => {
+            // Close popup on ESC key
             if (e.key === 'Escape' && resultPopup.style.display === 'flex') {
                 closeResultPopup();
+                return;
+            }
+            
+            // Take picture on Enter key (only when popup is not open and button is not disabled)
+            if (e.key === 'Enter' && resultPopup.style.display !== 'flex' && !captureBtn.disabled) {
+                e.preventDefault();
+                takePicture();
             }
         });
 
