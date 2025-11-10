@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Camera Feed</title>
+    <link rel="stylesheet" href="/shared.css">
     <link rel="stylesheet" href="/camera.css">
+    <script src="/utils.js"></script>
 </head>
 <body>
     <video id="video" autoplay playsinline></video>
@@ -18,12 +20,33 @@
         <span class="loading-text">Saving to Lost &amp; Found…</span>
     </div>
 
+    <!-- Result Popup Modal -->
+    <div id="resultPopup" class="result-popup" style="display: none;">
+        <div class="result-popup-overlay" onclick="closeResultPopup()"></div>
+        <div class="result-popup-content">
+            <div class="result-popup-card">
+                <div class="result-image-wrapper">
+                    <img id="resultImage" src="" alt="Captured item" class="result-image" />
+                </div>
+                <div class="result-content">
+                    <div class="result-label" id="resultLabel">Loading...</div>
+                    <span class="result-category" id="resultCategory" style="display: none;"></span>
+                    <div class="result-details" id="resultDetails"></div>
+                </div>
+            </div>
+            <div class="result-popup-actions">
+                <button class="result-popup-button" onclick="closeResultPopup()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const video = document.getElementById('video');
         const captureBtn = document.getElementById('captureBtn');
         const photo = document.getElementById('photo');
         const statusDiv = document.getElementById('status');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const resultPopup = document.getElementById('resultPopup');
         const canvas = document.createElement('canvas');
         let stream = null;
         let statusTimeout = null;
@@ -146,7 +169,12 @@
                 const data = await response.json();
                 if (data.warning) {
                     showMessage(data.warning, 'error', 7000);
-                } else {
+                }
+                
+                // Show popup with result if we have metadata
+                if (data.success && data.metadata) {
+                    showResultPopup(dataUrl, data.metadata);
+                } else if (!data.warning) {
                     showMessage('Photo saved to Lost & Found.', 'success');
                 }
             } catch (error) {
@@ -155,6 +183,53 @@
                 throw error;
             }
         }
+
+        // Show result popup with image and metadata
+        function showResultPopup(imageDataUrl, metadata) {
+            // Set the image
+            const resultImage = document.getElementById('resultImage');
+            resultImage.src = imageDataUrl;
+
+            // Set the label
+            const resultLabel = document.getElementById('resultLabel');
+            resultLabel.textContent = formatLabel(metadata.label);
+
+            // Set the category
+            const resultCategory = document.getElementById('resultCategory');
+            if (metadata.category) {
+                resultCategory.textContent = escapeHtml(metadata.category);
+                resultCategory.style.display = 'inline-block';
+            } else {
+                resultCategory.style.display = 'none';
+            }
+
+            // Build details HTML
+            const resultDetails = document.getElementById('resultDetails');
+            let detailsHtml = '';
+            detailsHtml += `<p><strong>Time found:</strong> ${formatTimestamp(metadata.timestamp)}</p>`;
+            detailsHtml += `<p><strong>Color:</strong> ${escapeHtml(metadata.color)}</p>`;
+            detailsHtml += `<p><strong>Condition:</strong> ${escapeHtml(metadata.condition)}</p>`;
+            detailsHtml += `<p><strong>Features:</strong> ${escapeHtml(metadata.distinctive_features)}</p>`;
+
+            resultDetails.innerHTML = detailsHtml || '<p>No additional details available.</p>';
+
+            // Show popup and prevent body scroll
+            resultPopup.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close result popup
+        function closeResultPopup() {
+            resultPopup.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // Close popup on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && resultPopup.style.display === 'flex') {
+                closeResultPopup();
+            }
+        });
 
         captureBtn.addEventListener('click', takePicture);
 

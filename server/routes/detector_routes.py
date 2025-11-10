@@ -158,7 +158,6 @@ def detect_image():
             "filename": filename,
             "image_url": image_url,
             "label": formatted_label,
-            "confidence": str(best_detection["confidence"]),
             "category": category,
             "color": item_description.get("color") if item_description else None,
             "condition": item_description.get("condition") if item_description else None,

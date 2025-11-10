@@ -1,0 +1,232 @@
+/**
+ * Shared styles for Lost & Found application
+ */
+
+/* Universal Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Common Font Family */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Result Card Styles (used in both search and camera popup) */
+.result-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 250px;
+}
+
+.result-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #f0f0f0;
+}
+
+.result-content {
+    padding: 20px;
+}
+
+.result-label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.result-category {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+}
+
+.result-details {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.result-details p {
+    margin-bottom: 8px;
+}
+
+.result-details strong {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Result Popup Modal (used in camera.html) */
+.result-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+}
+
+.result-popup-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.result-popup-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    z-index: 201;
+    animation: popupSlideIn 0.3s ease-out;
+}
+
+@keyframes popupSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.result-popup-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s, transform 0.2s;
+    z-index: 202;
+}
+
+.result-popup-close:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+.result-popup-close:active {
+    transform: scale(0.95);
+}
+
+.result-popup-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.result-popup-card .result-image-wrapper {
+    height: 300px;
+}
+
+.result-popup-card .result-content {
+    padding: 24px;
+}
+
+.result-popup-card .result-label {
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+}
+
+.result-popup-card .result-category {
+    padding: 6px 14px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+}
+
+.result-popup-card .result-details {
+    font-size: 0.95rem;
+}
+
+.result-popup-card .result-details p {
+    margin-bottom: 10px;
+}
+
+.result-popup-actions {
+    padding: 16px 24px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.result-popup-button {
+    padding: 12px 28px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #667eea;
+    color: white;
+    font-weight: 500;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.result-popup-button:hover {
+    background: #5568d3;
+    transform: translateY(-1px);
+}
+
+.result-popup-button:active {
+    transform: translateY(0);
+}
+
+/* Common Animations */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive adjustments for result popup */
+@media (max-width: 768px) {
+    .result-popup-content {
+        max-width: 95%;
+        max-height: 95vh;
+    }
+
+    .result-popup-card .result-image-wrapper {
+        height: 250px;
+    }
+
+    .result-popup-card .result-label {
+        font-size: 1.2rem;
+    }
+
+    .result-popup-card .result-content {
+        padding: 20px;
+    }
+}
+

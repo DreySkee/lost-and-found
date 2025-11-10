@@ -1,9 +1,4 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+/* Camera page specific styles */
 body {
     width: 100vw;
     height: 100vh;
@@ -128,8 +123,3 @@ button:disabled {
     cursor: not-allowed;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
