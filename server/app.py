@@ -66,13 +66,29 @@ def create_app():
             return send_from_directory(client_root, "camera.css")
         return {"error": "CSS file not found"}, 404
 
+    @app.route("/shared.css")
+    def serve_shared_css():
+        """Serve shared.css"""
+        css_file = os.path.join(client_root, "shared.css")
+        if os.path.exists(css_file):
+            return send_from_directory(client_root, "shared.css")
+        return {"error": "CSS file not found"}, 404
+
+    @app.route("/utils.js")
+    def serve_utils_js():
+        """Serve utils.js"""
+        js_file = os.path.join(client_root, "utils.js")
+        if os.path.exists(js_file):
+            return send_from_directory(client_root, "utils.js", mimetype="application/javascript")
+        return {"error": "JS file not found"}, 404
+
     @app.route("/")
     def home():
         return serve_search()
     
-    # Catch-all route for React Router (must be last, after all API routes)
+    # Catch-all route for static files (must be last, after all API routes)
     @app.route("/<path:path>")
-    def serve_react_app(path):
+    def serve_static_files(path):
         # Skip API routes and static assets
         if any(path.startswith(prefix) for prefix in ["api/", "detector/", "upload", "metadata", "uploads/"]):
             return {"error": "Not found"}, 404
@@ -90,7 +106,11 @@ def create_app():
 def main():
     """Entry point for the start script"""
     app = create_app()
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    # Use PORT environment variable if available (for production), otherwise default to 8080
+    port = int(os.getenv("PORT", 8080))
+    # Only enable debug mode if explicitly set via environment variable
+    debug = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug)
 
 
 if __name__ == "__main__":

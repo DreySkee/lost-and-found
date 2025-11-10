@@ -3,8 +3,6 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
 import base64
-import types
-from utils.detector_utils import detect_objects
 from utils.metadata_utils import load_metadata, save_metadata
 from utils.openai_utils import generate_item_description
 
@@ -17,52 +15,9 @@ def to_title_case(value: str):
     return " ".join(word.capitalize() for word in value.split())
 
 
-@detector_bp.route("/detector/detect-realtime", methods=["POST"])
-def detect_realtime():
-    """Real-time detection endpoint that doesn't save images"""
-    try:
-        if "imageData" not in request.form:
-            return jsonify({"error": "No image data provided"}), 400
-        
-        image_data = request.form["imageData"]
-        # Remove data URL prefix if present
-        if "," in image_data:
-            image_data = image_data.split(",")[1]
-        
-        # Decode base64 image
-        image_bytes = base64.b64decode(image_data)
-        
-        # Save temporary image for detection (will be cleaned up)
-        import tempfile
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg', dir=current_app.config["UPLOAD_FOLDER"]) as tmp:
-            tmp.write(image_bytes)
-            temp_path = tmp.name
-        
-        try:
-            # Detect objects
-            detections = detect_objects(temp_path)
-            
-            return jsonify({
-                "success": True,
-                "detections": detections
-            }), 200
-        finally:
-            # Clean up temp file
-            try:
-                os.remove(temp_path)
-            except:
-                pass
-        
-    except Exception as e:
-        print(f"[ERROR] Real-time detection failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
-
 @detector_bp.route("/detector/detect", methods=["POST", "OPTIONS"])
 def detect_image():
-    """Process an image with YOLO detector"""
+    """Process an image and generate item description"""
     if request.method == "OPTIONS":
         response = jsonify({})
         response.headers.add("Access-Control-Allow-Origin", "*")
@@ -108,24 +63,11 @@ def detect_image():
             temp_path = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_filename)
             file.save(temp_path)
         
-        # Detect objects
-        print(f"[INFO] Processing image: {temp_path}")
-        detections = detect_objects(temp_path)
-        print(f"[INFO] Detections returned: {len(detections)} items")
-        
-        
-        # Get best detection
-        if detections:
-            best_detection = max(detections, key=lambda x: x["confidence"])
-        else:
-            best_detection = {}
-            best_detection["label"] = None
-            best_detection["confidence"] = 0
-            best_detection["bbox"] = None
-    
-        
         # Generate OpenAI description if available
+        print(f"[INFO] Processing image: {temp_path}")
         item_description = None
+        description_warning = None
+        
         try:
             item_description = generate_item_description(temp_path)
             if item_description:
@@ -139,19 +81,15 @@ def detect_image():
             import traceback
             traceback.print_exc()
 
-         # Save the image with proper name
-        category = None
-        if item_description:
-            category = item_description.get("category")
-        if not category:
-            category = best_detection.get("label") if best_detection.get("label") else "item"
+        # Save the image with proper name
+        category = item_description.get("category") if item_description else "item"
         filename = secure_filename(f"{category}_{ts}.jpg")
         file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
         os.rename(temp_path, file_path)
         
         # Build metadata record
         image_url = f"http://{request.host}/uploads/{filename}"
-        raw_label = item_description.get("label") if item_description else best_detection.get("label")
+        raw_label = item_description.get("label") if item_description else None
         formatted_label = to_title_case(raw_label) if raw_label else None
         record = {
             "timestamp": ts,

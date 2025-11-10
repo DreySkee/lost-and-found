@@ -21,10 +21,6 @@ server/processed/
 server/*.log
 server/metadata.json
 
-# Model weights
-*.pt
-*.onnx
-*.weights
 
 # uv / pip artifacts
 uv.lock

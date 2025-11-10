@@ -10,7 +10,6 @@ This guide covers multiple ways to debug your Python application.
 2. **Open Debug Panel**: Press `F5` or click the Debug icon in the sidebar
 3. **Select configuration**: Choose one of these:
    - **Python: Flask (Main App)** - Debug the Flask web server
-   - **Python: Detector Script** - Debug the YOLO detector script
    - **Python: Current File** - Debug the currently open file
 4. **Start debugging**: Press `F5` or click the green play button
 
@@ -64,8 +63,6 @@ def detect_image():
 ### Run with pdb from terminal:
 ```bash
 python -m pdb -m server.app
-# or
-python -m pdb server/detector/main.py
 ```
 
 ---
@@ -152,18 +149,11 @@ Change `debug=True` to `debug=False` in `server/app.py`
 3. Make a request to that endpoint
 4. Execution will pause at your breakpoint
 
-### Debugging Detector Script:
-
-1. Open `server/detector/main.py`
-2. Set breakpoints where needed
-3. Use "Python: Detector Script" configuration
-4. Press F5
-
 ### Debugging Import Errors:
 
 ```python
 try:
-    from utils.detector_utils import detect_objects
+    from utils.openai_utils import generate_item_description
 except ImportError as e:
     print(f"Import error: {e}")
     import sys
