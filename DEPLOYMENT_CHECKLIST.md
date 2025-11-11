@@ -15,11 +15,10 @@
 1. [ ] Create account at https://render.com
 2. [ ] Create new Web Service
 3. [ ] Connect GitHub repository
-4. [ ] Set build command: `pip install -r requirements.txt && python download_model.py`
+4. [ ] Set build command: `pip install -r requirements.txt`
 5. [ ] Set start command: `gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120 wsgi:app`
 6. [ ] Add environment variable: `OPENAI_API_KEY` (your API key)
-7. [ ] Add persistent disk (10GB recommended) for uploads
-8. [ ] Deploy!
+7. [ ] Deploy!
 
 ### Option 2: Railway
 
@@ -42,7 +41,7 @@
 
 1. [ ] Create account at https://digitalocean.com
 2. [ ] Create new App from GitHub
-3. [ ] Set build command: `pip install -r requirements.txt && python download_model.py`
+3. [ ] Set build command: `pip install -r requirements.txt`
 4. [ ] Set run command: `gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120 wsgi:app`
 5. [ ] Add environment variables
 6. [ ] Add persistent volume for uploads
@@ -67,10 +66,9 @@
 
 ## Important Notes
 
-1. **Storage**: Most platforms have ephemeral storage - uploads may be lost on restart. Consider:
+1. **Storage**: Most platforms have ephemeral storage - uploads may be lost on restart or redeploy. Consider:
    - Using external storage (S3, Cloudinary)
    - Using a database for metadata
-   - Using persistent volumes (if supported)
 2. **HTTPS**: Required for camera access in browsers
 3. **Performance**: Adjust worker/thread counts based on resources
 4. **OpenAI API**: Required for item descriptions (application will work without it but with limited functionality)
@@ -79,9 +77,9 @@
 
 
 ### Uploads not persisting
-- Verify persistent storage is configured
-- Check disk mount paths
-- Consider using external storage
+- Check if your hosting platform uses ephemeral storage
+- Consider using external storage (S3, Cloudinary, etc.)
+- Use a database for metadata persistence
 
 ### Camera not working
 - Verify HTTPS is enabled

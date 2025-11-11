@@ -37,11 +37,7 @@ The application requires an OpenAI API key for generating item descriptions. Mak
    - `OPENAI_API_KEY`: Your OpenAI API key (optional)
    - `PYTHON_VERSION`: `3.11.0`
 
-4. **Add Persistent Disk** (recommended):
-   - Add a disk with at least 10GB for uploads and metadata
-   - Mount path: `/opt/render/project/src`
-
-5. **Deploy**: Render will automatically deploy your application
+4. **Deploy**: Render will automatically deploy your application
 
 **Alternative**: Use the included `render.yaml` file for automatic configuration.
 
@@ -136,14 +132,6 @@ Most hosting platforms have ephemeral filesystems, meaning uploaded files and me
 1. **Using a database** for metadata (PostgreSQL, MongoDB, etc.)
 2. **Using object storage** for images (AWS S3, Cloudinary, etc.)
 3. **Using persistent volumes** (if supported by your hosting platform)
-
-### Model Files
-
-The YOLO model file (`yolov8n.pt`) is approximately 6MB. Make sure it's included in your deployment:
-
-1. **Include in repository** (recommended for small teams)
-2. **Download during build** (add to build script)
-3. **Use persistent storage** and download on first run
 
 ### Performance Considerations
 

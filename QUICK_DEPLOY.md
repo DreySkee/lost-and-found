@@ -36,15 +36,7 @@ git push -u origin main
    - Key: `OPENAI_API_KEY`
    - Value: Your OpenAI API key (get it from https://platform.openai.com/api-keys)
 
-5. **Add Persistent Disk** (CRITICAL - Prevents uploads from being deleted):
-   - Scroll down to "Disks" section
-   - Click "Add Disk" or "Attach Disk"
-   - Name: `lost-and-found-disk`
-   - Mount Path: `/opt/render/project/src`
-   - Size: `10 GB` (or more - recommended for production)
-   - ⚠️ **Without this disk, all uploads will be deleted on each deployment!**
-
-6. **Deploy**:
+5. **Deploy**:
    - Click "Create Web Service"
    - Wait for build to complete (5-10 minutes)
    - Your app will be live at `https://your-app-name.onrender.com`
@@ -109,21 +101,15 @@ Make sure to set:
 - `FLASK_DEBUG`: Set to `false` for production
 
 ### Storage Warning
-⚠️ **CRITICAL**: Render's filesystem is **ephemeral** - files are deleted on each deployment!
+⚠️ **Important**: Most free tiers have **ephemeral storage**, meaning uploads will be lost when the app restarts or redeploys!
 
-**Solution for Render**:
-1. **Add Persistent Disk** (Required):
-   - Go to your Render service → "Disks" section
-   - Add a disk with mount path: `/opt/render/project/src`
-   - The app will automatically use this disk for uploads and metadata
-   - Check logs to verify: `[INFO] Upload folder: /opt/render/project/src/uploads`
-
-**Alternative Solutions** (for other platforms or better reliability):
+**Solutions**:
 1. **Use External Storage**:
    - AWS S3 (recommended for production)
    - Cloudinary (easy setup, free tier available)
    - Google Cloud Storage
 2. **Use Database** for metadata (PostgreSQL, MongoDB)
+3. **Use Persistent Volumes** (if supported by your hosting platform)
 
 ### HTTPS
 All platforms provide HTTPS automatically, which is required for camera access in browsers.
