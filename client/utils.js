@@ -31,9 +31,9 @@ function formatLabel(label) {
 }
 
 /**
- * Format timestamp to readable date/time string
- * @param {string} timestamp - Timestamp in format YYYYMMDD_HHMMSS
- * @returns {string} Formatted date/time string
+ * Format timestamp to readable date/time string in Eastern Time
+ * @param {string} timestamp - Timestamp in format YYYYMMDD_HHMMSS (stored as UTC)
+ * @returns {string} Formatted date/time string in Eastern Time
  */
 function formatTimestamp(timestamp) {
     if (!timestamp) return 'Unknown';
@@ -47,26 +47,30 @@ function formatTimestamp(timestamp) {
         const minute = timestamp.substring(11, 13);
         const second = timestamp.substring(13, 15);
         
-        // Create date object
-        const date = new Date(
+        // Create date object in UTC (since server stores timestamps in UTC)
+        // Using UTC constructor to avoid timezone conversion issues
+        const date = new Date(Date.UTC(
             parseInt(year),
             parseInt(month) - 1, // Month is 0-indexed
             parseInt(day),
             parseInt(hour),
             parseInt(minute),
             parseInt(second)
-        );
+        ));
         
-        // Format: "November 6, 2025 at 4:55 PM"
+        // Convert to Eastern Time and format
+        // Eastern Time: America/New_York (handles EDT/EST automatically)
         const dateStr = date.toLocaleDateString('en-US', { 
             year: 'numeric', 
             month: 'long', 
-            day: 'numeric' 
+            day: 'numeric',
+            timeZone: 'America/New_York'
         });
         const timeStr = date.toLocaleTimeString('en-US', { 
             hour: 'numeric', 
             minute: '2-digit', 
-            hour12: true 
+            hour12: true,
+            timeZone: 'America/New_York'
         });
         
         return `${dateStr} at ${timeStr}`;

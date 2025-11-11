@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import base64
 from utils.metadata_utils import load_metadata, save_metadata
@@ -48,17 +48,17 @@ def detect_image():
             # Decode base64 image
             image_bytes = base64.b64decode(image_data)
             
-            # Save temporary image
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Save temporary image (use UTC to ensure consistency across timezones)
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             temp_filename = f"temp_capture_{ts}.jpg"
             temp_path = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_filename)
             
             with open(temp_path, "wb") as f:
                 f.write(image_bytes)
         else:
-            # Handle file upload
+            # Handle file upload (use UTC to ensure consistency across timezones)
             file = request.files["image"]
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             temp_filename = secure_filename(f"temp_{ts}_{file.filename}")
             temp_path = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_filename)
             file.save(temp_path)
