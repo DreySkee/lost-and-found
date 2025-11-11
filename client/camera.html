@@ -9,6 +9,9 @@
     <script src="/utils.js"></script>
 </head>
 <body>
+    <nav class="camera-nav">
+        <a href="/search" class="nav-link">🔍 Search Items</a>
+    </nav>
     <video id="video" autoplay playsinline></video>
     <img id="photo" alt="Captured photo" />
     <div class="controls">
@@ -227,8 +230,9 @@
 
         // Handle keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Close popup on ESC key
-            if (e.key === 'Escape' && resultPopup.style.display === 'flex') {
+            // Close popup on ESC or Enter key when popup is open
+            if ((e.key === 'Escape' || e.key === 'Enter') && resultPopup.style.display === 'flex') {
+                e.preventDefault();
                 closeResultPopup();
                 return;
             }
