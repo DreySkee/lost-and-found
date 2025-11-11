@@ -36,12 +36,13 @@ git push -u origin main
    - Key: `OPENAI_API_KEY`
    - Value: Your OpenAI API key (get it from https://platform.openai.com/api-keys)
 
-5. **Add Persistent Disk** (Important for uploads):
-   - Scroll down to "Disks"
-   - Click "Add Disk"
+5. **Add Persistent Disk** (CRITICAL - Prevents uploads from being deleted):
+   - Scroll down to "Disks" section
+   - Click "Add Disk" or "Attach Disk"
    - Name: `lost-and-found-disk`
    - Mount Path: `/opt/render/project/src`
-   - Size: `10 GB` (or more)
+   - Size: `10 GB` (or more - recommended for production)
+   - ⚠️ **Without this disk, all uploads will be deleted on each deployment!**
 
 6. **Deploy**:
    - Click "Create Web Service"
@@ -108,15 +109,21 @@ Make sure to set:
 - `FLASK_DEBUG`: Set to `false` for production
 
 ### Storage Warning
-⚠️ **Important**: Most free tiers have **ephemeral storage**, meaning uploads will be lost when the app restarts!
+⚠️ **CRITICAL**: Render's filesystem is **ephemeral** - files are deleted on each deployment!
 
-**Solutions**:
-1. **Use Persistent Disk** (Render, Railway paid plans)
-2. **Use External Storage**:
-   - AWS S3
-   - Cloudinary
+**Solution for Render**:
+1. **Add Persistent Disk** (Required):
+   - Go to your Render service → "Disks" section
+   - Add a disk with mount path: `/opt/render/project/src`
+   - The app will automatically use this disk for uploads and metadata
+   - Check logs to verify: `[INFO] Upload folder: /opt/render/project/src/uploads`
+
+**Alternative Solutions** (for other platforms or better reliability):
+1. **Use External Storage**:
+   - AWS S3 (recommended for production)
+   - Cloudinary (easy setup, free tier available)
    - Google Cloud Storage
-3. **Use Database** for metadata (PostgreSQL, MongoDB)
+2. **Use Database** for metadata (PostgreSQL, MongoDB)
 
 ### HTTPS
 All platforms provide HTTPS automatically, which is required for camera access in browsers.

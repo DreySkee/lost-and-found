@@ -1,15 +1,29 @@
 import os, json, tempfile, shutil
 from threading import Lock
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-METADATA_FILE = os.path.join(BASE_DIR, "metadata.json")
 metadata_lock = Lock()
+
+def get_metadata_file_path():
+    """Get the metadata file path"""
+    # Check for persistent disk path (Render)
+    persistent_disk = os.getenv("RENDER_PERSISTENT_DISK_PATH", "/opt/render/project/src")
+    
+    if os.path.exists(persistent_disk):
+        # Use persistent disk for metadata
+        metadata_folder = persistent_disk
+    else:
+        # Fall back to local storage
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        metadata_folder = BASE_DIR
+    
+    return os.path.join(metadata_folder, "metadata.json")
 
 
 def load_metadata():
-    if not os.path.exists(METADATA_FILE):
+    metadata_file = get_metadata_file_path()
+    if not os.path.exists(metadata_file):
         return []
-    with open(METADATA_FILE, "r") as f:
+    with open(metadata_file, "r") as f:
         try:
             return json.load(f)
         except json.JSONDecodeError:
@@ -17,8 +31,12 @@ def load_metadata():
 
 
 def save_metadata(data):
+    metadata_file = get_metadata_file_path()
+    metadata_dir = os.path.dirname(metadata_file)
+    os.makedirs(metadata_dir, exist_ok=True)
+    
     with metadata_lock:
-        tmp = tempfile.NamedTemporaryFile("w", delete=False, dir=os.path.dirname(METADATA_FILE))
+        tmp = tempfile.NamedTemporaryFile("w", delete=False, dir=metadata_dir)
         json.dump(data, tmp, indent=2)
         tmp.close()
-        shutil.move(tmp.name, METADATA_FILE)
+        shutil.move(tmp.name, metadata_file)

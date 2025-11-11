@@ -19,9 +19,20 @@ def create_app():
     app = Flask(__name__, static_folder="static", static_url_path="/static")
 
     # Base directory & folders
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    # Use storage_utils to get the correct paths (handles persistent disk)
+    from utils.storage_utils import get_upload_folder, get_metadata_folder
+    
+    # Set upload and metadata folders (will use persistent disk if available)
+    UPLOAD_FOLDER = get_upload_folder(BASE_DIR)
+    METADATA_FOLDER = get_metadata_folder(BASE_DIR)
+    
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+    app.config["METADATA_FOLDER"] = METADATA_FOLDER
+    
+    # Log the paths being used (for debugging)
+    print(f"[INFO] Upload folder: {UPLOAD_FOLDER}")
+    print(f"[INFO] Metadata folder: {METADATA_FOLDER}")
+    print(f"[INFO] Persistent disk exists: {os.path.exists('/opt/render/project/src')}")
 
     # Register blueprints
     app.register_blueprint(image_bp)
