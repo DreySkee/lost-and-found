@@ -9,9 +9,14 @@
     <script src="/utils.js"></script>
 </head>
 <body>
-    <nav class="camera-nav">
-        <a href="/search" class="nav-link">🔍 Search Items</a>
-    </nav>
+    <div class="header">
+        <div class="leftpart">
+            <img src="/logos/Serchey.JPG" class="sizer">
+        </div>
+        <div class="rightpart">
+            <a href="/search" class="demo-button">Search</a>
+        </div>
+    </div>
     <video id="video" autoplay playsinline></video>
     <img id="photo" alt="Captured photo" />
     <div class="controls">
@@ -91,7 +96,30 @@
                 statusDiv.style.display = 'none';
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                showMessage(`Camera access error: ${error.message}`, 'error', 7000);
+                let errorMessage = error.message || 'Unknown error';
+                
+                // Provide more helpful error messages
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    errorMessage = 'Camera permission denied. Please allow camera access and refresh the page.';
+                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    errorMessage = 'No camera found. Please connect a camera device.';
+                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                    errorMessage = 'Camera is already in use by another application.';
+                } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+                    errorMessage = 'Camera constraints not supported. Trying with default settings...';
+                    // Try again with simpler constraints
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                        video.srcObject = stream;
+                        captureBtn.disabled = false;
+                        statusDiv.style.display = 'none';
+                        return;
+                    } catch (retryError) {
+                        errorMessage = 'Camera access failed. Please check your camera settings.';
+                    }
+                }
+                
+                showMessage(`Camera access error: ${errorMessage}`, 'error', 7000);
                 captureBtn.disabled = true;
             }
         }

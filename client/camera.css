@@ -6,35 +6,68 @@ body {
     background: #000;
 }
 
-/* Camera Navigation */
-.camera-nav {
-    position: fixed;
-    top: 20px;
-    left: 20px;
+.header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+    display: flex;
     z-index: 150;
+    position: absolute;
+    width: 100%;
+    padding: 20px;
 }
 
-.camera-nav .nav-link {
-    display: inline-block;
-    padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.9);
-    color: #333;
+.leftpart {
+    display: flex;
+    flex: 1;
+}
+
+.middlepart {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.rightpart {
+    display: flex;
+    height: 70px;
+    flex: 1;
+    justify-content: center;
+    max-width: 200px;
+    margin-top: 20px;
+}
+
+.demo-button {
+    background-color: blue;
+    border-radius: 5px;
+    height: 45px;
+    margin-top: 10px;
+    width: 100px;
+    font-family: roboto, gill sans arial,;
+    transition: background-color 0.2s;
+    color: white;
     text-decoration: none;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 16px;
-    transition: background 0.3s, transform 0.2s;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
 }
 
-.camera-nav .nav-link:hover {
-    background: rgba(255, 255, 255, 1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+.demo-button:hover {
+    background-color: turquoise;
+    border-width: 3px;
+    border-color: white;
+    color: black;
 }
 
-.camera-nav .nav-link:active {
-    transform: translateY(0);
+.sizer {
+    height: 110px;
+    width: 155px;
+    margin-top: -5px;
+    margin-left: 20px;
 }
 
 #video {

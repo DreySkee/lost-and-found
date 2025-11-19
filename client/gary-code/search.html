@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost & Found - Search (Offline)</title>
+    <link rel="stylesheet" href="search.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="leftpart">
+                <img src="logos/Serchey.jpg" class="sizer">
+            </div>
+            <div class="middlepart">How It Works</div>
+            <div class="rightpart">.
+                <button class="demo-button">Demo</button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <p class="catcher">Lost an item at school? Find it here</p>
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-box" 
+                placeholder="Search by label, category, color, condition, or distinctive features..."
+                autocomplete="off"
+            />
+            <div class="results-info" id="resultsInfo"></div>
+        </div>
+
+        <div id="resultsContainer"></div>
+    </div>
+
+    <!-- Footer -->
+     <div class="footer">
+        <div class="partners-middle">
+             <p class="partners">Our partners</p>
+        </div>
+        <!--Image-->
+        <div class="image-bottom">
+     <img class="PVimage" src="logos/PVlogo.jpeg">
+    </div>
+     </div>
+    <!-- This file gives us the list of items to show -->
+    <script src="metadata.js"></script>
+    <script>
+        // If the list is missing, let the reader know.
+        if (!window.METADATA || !Array.isArray(window.METADATA)) {
+            document.getElementById('resultsContainer').innerHTML = `
+                <div class="error">Metadata failed to load. Ensure metadata.js is in the same directory as this page.</div>
+            `;
+        }
+
+        // Grab the item list. We copy so we can sort without breaking the original list.
+        let metadata = Array.isArray(window.METADATA) ? window.METADATA.slice() : [];
+        let searchTimeout;
+
+        // Sort items so the newest ones appear first.
+        metadata = sortByTimestampDesc(metadata);
+        // Show everything right away.
+        displayResults(metadata);
+
+        // When someone types in the search box, we wait 250ms before re-running the search.
+        document.getElementById('searchInput').addEventListener('input', (event) => {
+            clearTimeout(searchTimeout);
+            const query = event.target.value;
+            searchTimeout = setTimeout(() => searchItems(query), 250);
+        });
+
+        // --- Helper functions ---
+
+        // Sort items so the latest timestamp comes first.
+        function sortByTimestampDesc(items) {
+            return [...items].sort((a, b) => {
+                const tsA = a.timestamp || '';
+                const tsB = b.timestamp || '';
+                return tsB.localeCompare(tsA);
+            });
+        }
+
+        // Filter items based on what was typed.
+        function searchItems(query) {
+            if (!query.trim()) {
+                displayResults(metadata);
+                return;
+            }
+
+            const searchTerm = query.toLowerCase().trim();
+            const filtered = metadata.filter(item => {
+                const searchableText = [
+                    item.label || '',
+                    item.category || '',
+                    item.color || '',
+                    item.condition || '',
+                    item.distinctive_features || ''
+                ].join(' ').toLowerCase();
+
+                return searchableText.includes(searchTerm);
+            });
+
+            displayResults(filtered);
+        }
+
+        // Build the HTML for the list of items.
+        function displayResults(results) {
+            const container = document.getElementById('resultsContainer');
+            const infoEl = document.getElementById('resultsInfo');
+
+            if (!results || results.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h2>No items found</h2>
+                        <p>Try adjusting your search terms</p>
+                    </div>
+                `;
+                infoEl.textContent = 'No results found';
+                return;
+            }
+
+            infoEl.textContent = `Found ${results.length} item${results.length !== 1 ? 's' : ''}`;
+
+            container.innerHTML = `
+                <div class="results-grid">
+                    ${results.map(item => `
+                        <div class="result-card" data-filename="${item.filename}">
+                            <div class="result-image-wrapper">
+                                <img 
+                                    src="${item.image_url}" 
+                                    alt="${item.label || 'Found item'}"
+                                    class="result-image"
+                                />
+                            </div>
+                            <div class="result-content">
+                                <div class="result-label">${item.label}</div>
+            
+                                <div class="result-details">
+                                    ${item.timestamp ? `<p><strong>Time found:</strong> ${formatTimestamp(item.timestamp)}</p>` : ''}
+                                    ${item.color ? `<p><strong>Color:</strong> ${item.color}</p>` : ''}
+                                    ${item.condition ? `<p><strong>Condition:</strong> ${item.condition}</p>` : ''}
+                                    ${item.distinctive_features ? `<p><strong>Features:</strong> ${item.distinctive_features}</p>` : ''}
+                                </div>
+                                    <div class="align-button">
+                                        <button class="claim-button"> Claim </button>
+                                   </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Turn a timestamp like "20251106_165548" into a nicer sentence.
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Unknown';
+
+            try {
+                const year = timestamp.substring(0, 4);
+                const month = timestamp.substring(4, 6);
+                const day = timestamp.substring(6, 8);
+                const hour = timestamp.substring(9, 11);
+                const minute = timestamp.substring(11, 13);
+                const second = timestamp.substring(13, 15);
+
+                const date = new Date(
+                    parseInt(year),
+                    parseInt(month) - 1,
+                    parseInt(day),
+                    parseInt(hour),
+                    parseInt(minute),
+                    parseInt(second)
+                );
+
+                const dateStr = date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                const timeStr = date.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                return `${dateStr} at ${timeStr}`;
+            } catch (error) {
+                console.error('Error formatting timestamp:', error);
+                return timestamp;
+            }
+        }
+    </script>
+</body>
+</html>

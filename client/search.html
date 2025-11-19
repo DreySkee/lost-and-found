@@ -11,14 +11,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔍 Lost &amp; Found Search</h1>
-            <p>Search through found items</p>
-            <nav class="search-nav">
-                <a href="/camera" class="nav-link">📸 Add Item</a>
-            </nav>
+            <div class="leftpart">
+                <img src="/logos/Serchey.JPG" class="sizer">
+            </div>
+            <div class="rightpart">.
+                <a href="/camera" class="demo-button">Camera</a>
+            </div>
         </div>
 
         <div class="search-container">
+            <p class="catcher">Lost an item at school? Find it here</p>
             <input 
                 type="text" 
                 id="searchInput" 
@@ -32,6 +34,17 @@
         <div id="errorMessage"></div>
         <div id="loadingMessage" class="loading" style="display: none;">Loading metadata...</div>
         <div id="resultsContainer"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="partners-middle">
+            <p class="partners">Our partners</p>
+        </div>
+        <!--Image-->
+        <div class="image-bottom">
+            <img class="PVimage" src="/logos/PVlogo.jpeg">
+        </div>
     </div>
 
     <script>
